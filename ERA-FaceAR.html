@@ -7,6 +7,20 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
+    <!-- Google tag (gtag.js) -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-HQHBBNZWB5"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+
+      gtag("config", "G-HQHBBNZWB5");
+    </script>
     <style>
       :root {
         --sat: env(safe-area-inset-top, 0px);
@@ -1627,6 +1641,43 @@
       });
       // Iniciar aplicación
       startCamera();
+    </script>
+    <!-- EVENTOS GOOGLE ANALYTICS -->
+    <script>
+      // Enviar evento cuando carga la página
+      gtag("event", "page_loaded", {
+        page_title: document.title,
+        page_path: window.location.pathname,
+      });
+
+      // Detectar clics en botones
+      document.addEventListener("click", function (e) {
+        if (e.target.tagName === "BUTTON") {
+          gtag("event", "button_click", {
+            button_text: e.target.innerText.trim(),
+            page_path: window.location.pathname,
+          });
+        }
+      });
+
+      // Detectar clics en enlaces <a>
+      document.addEventListener("click", function (e) {
+        let link = e.target.closest("a");
+        if (link) {
+          gtag("event", "link_click", {
+            link_url: link.href,
+            link_text: link.innerText.trim(),
+            page_path: window.location.pathname,
+          });
+        }
+      });
+
+      // (Opcional) detectar toque en pantalla móvil
+      document.addEventListener("touchstart", function () {
+        gtag("event", "touch_interaction", {
+          page_path: window.location.pathname,
+        });
+      });
     </script>
   </body>
 </html>
