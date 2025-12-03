@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>WebAR - 1er Informe ERA</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <style>
+      :root {
+        --sat: env(safe-area-inset-top, 0px);
+        --sab: env(safe-area-inset-bottom, 0px);
+
+        --btn-size: clamp(80px, 11vw, 116px);
+        --btn-icon: clamp(28px, 4.6vw, 44px);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        height: 100%;
+        margin: 0;
+        background: #000;
+      }
+
+      body {
+        height: 100%;
+        margin: 0;
+        margin: 0;
+        background: #000;
+        font-family: "Poppins", "Inter", "Segoe UI", sans-serif;
+        color: #f1f1f1;
+        overflow: hidden;
+      }
+      h1,
+      h2 {
+        letter-spacing: 1.2px;
+      }
+      #container {
+        width: 100vw;
+        height: 100vh;
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+      }
+      .alert-box.show {
+        display: block;
+        animation: slideDown 0.3s ease;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+
+      .alert-box h3 {
+        margin: 0 0 10px 0;
+        color: #0b9685;
+        font-size: 18px;
+      }
+
+      .alert-box p {
+        margin: 8px 0;
+        line-height: 1.5;
+        font-size: 14px;
+      }
+
+      .alert-box .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #999;
+        padding: 5px;
+        line-height: 1;
+      }
+
+      .alert-box .close-btn:hover {
+        color: #333;
+      }
+      #video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      #canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      /* ---------- SPLASH ---------- */
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 10001;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-image: url("Assets/imgs/splash.png");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+      #splash::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          180deg,
+          rgba(0, 0, 0, 0.35) 0%,
+          rgba(0, 0, 0, 0.55) 100%
+        );
+      }
+      #splash .content {
+        position: relative;
+        z-index: 1;
+        padding-top: calc(10px + var(--sat));
+        padding-bottom: calc(12px + var(--sab));
+        text-align: center;
+        color: #fff;
+      }
+      .spinner {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: 4px solid rgba(255, 255, 255, 0.25);
+        border-top-color: #0b9685;
+        animation: spin 1s linear infinite;
+        margin: 12px auto 0;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      #splash h1 {
+        font-size: 18px;
+        margin: 0;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+      }
+      #splash p {
+        margin: 8px 0 0;
+        opacity: 0.9;
+        font-size: 14px;
+      }
+
+      /* ---------- MODAL ---------- */
+      #modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 10000;
+        padding: 20px;
+      }
+      #modal .card {
+        width: min(94%, 520px);
+        max-height: 90vh;
+        overflow-y: auto;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        color: #111;
+        border-radius: 20px;
+        padding: 32px 24px;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        border: 3px solid var(--gold);
+      }
+      #modal h2 {
+        margin: 0 0 8px;
+        font-size: 26px;
+        color: var(--primary-dark);
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      #modal .subtitle {
+        font-size: 16px;
+        color: #555;
+        margin: 0 0 24px;
+        font-weight: 500;
+      }
+      .instructions-list {
+        text-align: left;
+        margin: 0 0 24px;
+        padding: 0;
+        list-style: none;
+      }
+      .instructions-list li {
+        padding: 14px 16px;
+        margin-bottom: 12px;
+        background: #fff;
+        border-radius: 12px;
+        font-size: 15px;
+        line-height: 1.6;
+        color: #333;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid var(--primary);
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .instructions-list li .icon {
+        font-size: 24px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .instructions-list li strong {
+        color: var(--primary-dark);
+      }
+      .hashtags-box {
+        background: black;
+        color: #ffffff !important;
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 12px rgba(11, 150, 133, 0.3);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      }
+      #modal button {
+        padding: 16px 32px;
+        border: 0;
+        border-radius: 12px;
+        font-weight: 800;
+        font-size: 18px;
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--primary-dark) 100%
+        );
+        color: #fff !important;
+        cursor: pointer;
+        box-shadow: 0 6px 20px rgba(11, 150, 133, 0.4);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      #modal button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(11, 150, 133, 0.5);
+      }
+      #modal button:active {
+        transform: translateY(0);
+      }
+
+      /* ---------- LOGOS ---------- */
+      #logoTop {
+        position: fixed;
+        top: calc(8px + var(--sat));
+        left: 50%;
+        transform: translateX(-50%);
+        width: clamp(220px, 45vw, 380px); /* 🔥 Tamaño adaptable y más grande */
+        height: auto;
+        z-index: 9998;
+        pointer-events: none;
+
+        /* 🔆 Efecto visual profesional */
+        filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.55))
+          drop-shadow(0 0 24px rgba(255, 255, 255, 0.18));
+        transition: transform 0.3s ease, filter 0.3s ease;
+      }
+
+      #logoTop:hover {
+        transform: translateX(-50%) scale(1.04); /* Pequeña animación al pasar el mouse */
+        filter: drop-shadow(0 6px 22px rgba(0, 0, 0, 0.6))
+          drop-shadow(0 0 32px rgba(255, 255, 255, 0.25));
+      }
+      #logoBottom {
+        position: fixed;
+        bottom: calc(12px + var(--sab));
+        left: 50%;
+        transform: translateX(-50%);
+        width: 36vw;
+        max-width: 200px;
+        height: auto;
+        z-index: 9998;
+        pointer-events: none;
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+      }
+
+      /* ---------- BOTÓN CÁMARA ---------- */
+      #btnCamera {
+        position: fixed;
+        bottom: calc(72px + var(--sab));
+        right: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 22px;
+        min-width: 160px;
+        height: 56px;
+        border: 0;
+        border-radius: 28px;
+        cursor: pointer;
+        touch-action: manipulation;
+        font-weight: 800;
+        font-size: 16px;
+        letter-spacing: 0.3px;
+        color: #fff;
+        z-index: 9999;
+        background: linear-gradient(90deg, #0b9685, #00c4a8);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+        transition: transform 0.18s ease, box-shadow 0.22s ease,
+          filter 0.22s ease;
+      }
+
+      #btnCamera:hover {
+        transform: translateY(-1px) scale(1.03);
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.55);
+        filter: brightness(1.05);
+      }
+
+      #btnCamera:active {
+        transform: translateY(0) scale(0.97);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+      }
+
+      #btnCamera svg {
+        width: 22px;
+        height: 22px;
+        fill: #fff;
+        flex: 0 0 auto;
+      }
+
+      #btnCamera span {
+        line-height: 1;
+        padding: 0 8px;
+      }
+      #btnCamera.hidden {
+        visibility: hidden !important;
+      }
+      @media (orientation: landscape) {
+        #btnCamera {
+          padding: 12px 22px;
+          min-width: 160px;
+        }
+      }
+      @media (orientation: portrait) {
+        #btnCamera {
+          left: auto;
+          right: 18px;
+          bottom: calc(92px + var(--sab));
+          width: var(--btn-size);
+          height: var(--btn-size);
+          padding: 0;
+          min-width: 0;
+          justify-content: center;
+          align-items: center;
+          flex-direction: column;
+          border-radius: 999px;
+          font-size: 16px;
+          line-height: 1.1;
+          text-align: center;
+          background: radial-gradient(circle at 30% 30%, #00c4a8, #0b9685);
+          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55),
+            0 0 0 3px rgba(255, 255, 255, 0.16) inset;
+        }
+
+        #btnCamera span {
+          display: block;
+          font-weight: 700;
+          font-size: 15px;
+          color: #fff;
+          letter-spacing: 0.5px;
+          margin-top: 4px;
+        }
+
+        #btnCamera svg {
+          display: none;
+        }
+
+        #btnCamera::before {
+          content: "📸";
+          font-size: clamp(32px, 5vw, 44px);
+          line-height: 1;
+        }
+      }
+
+      /* ---------- ANIMACIÓN DE CAPTURA ---------- */
+      #captureOverlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10001;
+        flex-direction: column;
+      }
+      #captureOverlay.active {
+        display: flex;
+      }
+      .paws {
+        display: flex;
+        gap: 12px;
+      }
+      .paw {
+        font-size: 48px;
+        animation: pawWalk 1.2s ease-in-out infinite;
+        opacity: 0;
+      }
+      .paw:nth-child(1) {
+        animation-delay: 0s;
+      }
+      .paw:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .paw:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      .paw:nth-child(4) {
+        animation-delay: 0.6s;
+      }
+      @keyframes pawWalk {
+        0%,
+        100% {
+          opacity: 0;
+          transform: translateY(0) scale(1);
+        }
+        50% {
+          opacity: 1;
+          transform: translateY(-15px) scale(1.1);
+        }
+      }
+      .capture-text {
+        color: #fff;
+        font-size: 18px;
+        font-weight: 600;
+        margin-top: 24px;
+        text-align: center;
+      }
+
+      /* ---------- MODAL COMPARTIR ---------- */
+      #shareModal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 10002;
+      }
+      #shareModal .card {
+        width: min(94%, 480px);
+        max-height: 90vh;
+        overflow-y: auto;
+        background: #fff;
+        color: #111;
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+      }
+      #shareModal h2 {
+        margin: 0 0 16px;
+        font-size: 20px;
+        order: 1;
+      }
+      .hashtags-copy-section {
+        order: 2;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        border: 2px solid var(--primary);
+      }
+
+      .hashtags-copy-section p {
+        margin: 0 0 12px;
+        font-size: 14px;
+        color: #333;
+        font-weight: 600;
+        line-height: 1.6;
+      }
+
+      .copy-hashtags-btn {
+        width: 100%;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--primary-dark) 100%
+        );
+        color: #fff;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 12px rgba(11, 150, 133, 0.3);
+      }
+
+      .copy-hashtags-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(11, 150, 133, 0.4);
+      }
+
+      .copy-hashtags-btn:active {
+        transform: translateY(0);
+      }
+
+      .copy-hashtags-btn.copied {
+        background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+      }
+      .share-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+        order: 3;
+      }
+      #capturedImage {
+        width: 100%;
+        max-width: 400px;
+        border-radius: 12px;
+        margin: 0 auto 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        order: 3;
+      }
+      .share-btn {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+      .share-btn:active {
+        transform: scale(0.9);
+      }
+      .share-btn svg {
+        width: 28px;
+        height: 28px;
+        fill: #fff;
+      }
+      .share-btn.whatsapp {
+        background: #25d366;
+      }
+      .share-btn.facebook {
+        background: #1877f2;
+      }
+      .share-btn.instagram {
+        background: linear-gradient(
+          45deg,
+          #f09433,
+          #e6683c,
+          #dc2743,
+          #cc2366,
+          #bc1888
+        );
+      }
+      .share-btn.x {
+        background: #000;
+      }
+      .share-btn.download {
+        font-weight: 700 !important;
+        font-size: 15px;
+        background: #0b9685;
+        width: 100%;
+        padding: 10px 20px;
+        border-radius: 12px;
+        height: 48px;
+        margin-top: 8px;
+        order: 4;
+      }
+      #closeShare {
+        margin-top: 12px;
+        padding: 10px 20px;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        background: #fff;
+        color: #333;
+        cursor: pointer;
+        font-weight: 600;
+        order: 5;
+      }
+      /* Responsive para modal de instrucciones */
+      @media (max-width: 480px) {
+        #modal .card {
+          padding: 24px 16px;
+          width: min(96%, 520px);
+        }
+
+        #modal h2 {
+          font-size: 22px;
+        }
+
+        #modal .subtitle {
+          font-size: 14px;
+        }
+
+        .instructions-list li {
+          padding: 12px 14px;
+          font-size: 14px;
+        }
+
+        .instructions-list li .icon {
+          font-size: 20px;
+        }
+
+        .hashtags-box {
+          font-size: 13px;
+          padding: 14px;
+        }
+
+        #modal button {
+          padding: 14px 24px;
+          font-size: 16px;
+        }
+      }
+
+      @media (max-height: 600px) {
+        #modal .card {
+          max-height: 85vh;
+          padding: 20px 16px;
+        }
+
+        #modal h2 {
+          font-size: 20px;
+          margin-bottom: 6px;
+        }
+
+        #modal .subtitle {
+          font-size: 13px;
+          margin-bottom: 16px;
+        }
+
+        .instructions-list {
+          margin-bottom: 16px;
+        }
+
+        .instructions-list li {
+          padding: 10px 12px;
+          margin-bottom: 8px;
+          font-size: 13px;
+        }
+
+        .hashtags-box {
+          padding: 12px;
+          margin-bottom: 16px;
+          font-size: 12px;
+        }
+
+        #modal button {
+          padding: 12px 24px;
+          font-size: 16px;
+        }
+      }
+
+      @media (min-width: 768px) {
+        #logoTop {
+          width: 18vw;
+          max-width: 220px;
+        }
+        #logoBottom {
+          width: 22vw;
+          max-width: 260px;
+        }
+      }
+
+      @media (orientation: landscape) {
+        #logoTop {
+          width: 16vw;
+          max-width: 120px;
+          top: calc(6px + var(--sat));
+        }
+        #logoBottom {
+          width: 20vw;
+          max-width: 140px;
+          bottom: calc(6px + var(--sab));
+        }
+        #splash .content {
+          padding-top: calc(6px + var(--sat));
+          padding-bottom: calc(8px + var(--sab));
+        }
+        #splash h1 {
+          font-size: 16px;
+        }
+        #splash p {
+          font-size: 12px;
+        }
+        .spinner {
+          width: 44px;
+          height: 44px;
+          border-width: 3px;
+        }
+        #btnCamera {
+          bottom: calc(56px + var(--sab));
+          height: 52px;
+          padding: 12px 18px;
+          min-width: 150px;
+        }
+        #btnCamera svg {
+          width: 28px;
+          height: 28px;
+        }
+        #shareModal .card {
+          max-width: 600px;
+          flex-direction: row;
+          flex-wrap: wrap;
+          align-items: flex-start;
+          padding: 16px;
+        }
+        #shareModal h2 {
+          width: 100%;
+          font-size: 18px;
+          margin-bottom: 12px;
+        }
+        .hashtags-copy-section {
+          width: 100%;
+          order: 2;
+        }
+
+        .share-buttons {
+          width: auto;
+          order: 3;
+          flex-direction: column;
+          gap: 12px;
+          margin: 0 16px 0 0;
+        }
+        #capturedImage {
+          width: auto;
+          max-width: 300px;
+          max-height: 60vh;
+          order: 2;
+          margin: 0;
+          flex: 1;
+        }
+        .share-btn.download {
+          width: 100%;
+          order: 3;
+          margin-top: 12px;
+        }
+        #closeShare {
+          width: 100%;
+          order: 4;
+        }
+      }
+
+      @media (max-height: 480px) {
+        #logoTop {
+          width: 14vw;
+          max-width: 100px;
+          top: calc(4px + var(--sat));
+        }
+        #logoBottom {
+          width: 18vw;
+          max-width: 120px;
+          bottom: calc(4px + var(--sab));
+        }
+        #splash h1 {
+          font-size: 14px;
+        }
+        #splash p {
+          font-size: 11px;
+        }
+        .spinner {
+          width: 38px;
+          height: 38px;
+          border-width: 3px;
+        }
+        #btnCamera {
+          width: clamp(64px, 12vw, 80px);
+          height: clamp(64px, 12vw, 80px);
+          bottom: calc(60px + var(--sab));
+        }
+      }
+      :root {
+        --primary: #0b9685;
+        --primary-dark: #087a6c;
+        --gold: #c8a646;
+      }
+
+      /* Card del modal: asegura contraste y un borde dorado real */
+      #modal .card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        color: #111;
+        border: 3px solid var(--gold);
+      }
+
+      /* Caja de hashtags: mejor legibilidad, envoltura y separación */
+      .hashtags-box {
+        background: black;
+        color: #fff !important;
+        padding: 16px 18px;
+        border-radius: 12px;
+        margin: 0 0 20px 0;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        line-height: 1.4;
+        text-align: center;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        box-shadow: 0 4px 12px rgba(11, 150, 133, 0.3);
+      }
+
+      /* Botón principal: tamaño táctil y contraste consistente */
+      #modal button#btnConsent {
+        display: block;
+        width: 100%;
+        max-width: 420px;
+        margin: 0 auto;
+        padding: 16px 28px;
+        border-radius: 14px;
+        font-weight: 800;
+        font-size: 18px;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--primary-dark) 100%
+        );
+        color: #fff !important;
+        box-shadow: 0 8px 22px rgba(11, 150, 133, 0.35);
+        border: none;
+      }
+
+      #modal button#btnConsent:hover {
+        transform: translateY(-1px);
+      }
+      #modal button#btnConsent:active {
+        transform: translateY(0);
+      }
+
+      /* Mobile: más grande y centrado */
+      @media (max-width: 480px) {
+        .hashtags-box {
+          font-size: 13px;
+          padding: 14px 16px;
+        }
+        #modal button#btnConsent {
+          font-size: 16px;
+          padding: 14px 22px;
+          max-width: none;
+        }
+      }
+
+      /* Alturas pequeñas: evita que se “aplasten” */
+      @media (max-height: 600px) {
+        #modal .card {
+          padding-bottom: 16px;
+        }
+        .hashtags-box {
+          margin-bottom: 14px;
+        }
+        #modal button#btnConsent {
+          padding: 12px 20px;
+        }
+      }
+
+      /* Accesibilidad al foco teclado */
+      #modal button#btnConsent:focus-visible {
+        outline: 3px solid #ffffff;
+        outline-offset: 3px;
+        box-shadow: 0 0 0 4px rgba(11, 150, 133, 0.35);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- SPLASH -->
+    <div id="splash">
+      <div class="content">
+        <h1>Cargando experiencia</h1>
+        <div class="spinner"></div>
+        <p>Activando cámara…</p>
+      </div>
+    </div>
+
+    <!-- MODAL: permiso de audio -->
+    <div id="modal">
+      <div class="card">
+        <h2>🐆 Bienvenido a Jaguar AR</h2>
+        <p class="subtitle">Primer Informe de Gobierno · Chiapas</p>
+
+        <ul class="instructions-list">
+          <li>
+            <span class="icon">📷</span>
+            <div>
+              <strong>Permite el acceso a tu cámara</strong><br />
+              Necesitamos usar tu cámara para aplicar el filtro de Jaguar
+            </div>
+          </li>
+          <li>
+            <span class="icon">🔊</span>
+            <div>
+              <strong>Activa el audio</strong><br />
+              Disfruta de una experiencia inmersiva con sonido ambiental
+            </div>
+          </li>
+          <li>
+            <span class="icon">👥</span>
+            <div>
+              <strong>¡Captura hasta 2 personas!</strong><br />
+              El filtro puede detectar y aplicar la máscara de Jaguar a
+              <strong>dos rostros simultáneamente</strong>
+            </div>
+          </li>
+          <li>
+            <span class="icon">📱</span>
+            <div>
+              <strong>Comparte tu experiencia</strong><br />
+              Usa nuestros hashtags oficiales en tus redes sociales
+            </div>
+          </li>
+        </ul>
+
+        <div class="hashtags-box">
+          #EduardoRamirez #1erInformeRA #HumanismoQueTransforma
+        </div>
+
+        <button id="btnConsent">🚀 Comenzar Experiencia</button>
+      </div>
+    </div>
+
+    <!-- OVERLAY: procesando captura -->
+    <div id="captureOverlay">
+      <div class="paws">
+        <span class="paw">🐾</span>
+        <span class="paw">🐾</span>
+        <span class="paw">🐾</span>
+        <span class="paw">🐾</span>
+      </div>
+      <p class="capture-text">Procesando foto...</p>
+    </div>
+
+    <!-- MODAL: compartir foto -->
+    <div id="shareModal">
+      <div class="card">
+        <h2>¡Foto capturada! 📸</h2>
+        <div class="hashtags-copy-section">
+          <p>#EduardoRamirez #1erInformeRA #HumanismoQueTransforma</p>
+          <button class="copy-hashtags-btn" id="copyHashtagsBtn">
+            <span>📋</span>
+            <span class="btn-text">Copiar</span>
+          </button>
+        </div>
+        <div class="share-buttons">
+          <button
+            class="share-btn whatsapp"
+            id="shareWhatsapp"
+            title="Compartir en WhatsApp"
+          >
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
+              />
+            </svg>
+          </button>
+          <button
+            class="share-btn facebook"
+            id="shareFacebook"
+            title="Compartir en Facebook"
+          >
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"
+              />
+            </svg>
+          </button>
+          <button
+            class="share-btn instagram"
+            id="shareInstagram"
+            title="Compartir en Instagram"
+          >
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z"
+              />
+            </svg>
+          </button>
+          <button class="share-btn x" id="shareX" title="Compartir en X">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+              />
+            </svg>
+          </button>
+        </div>
+        <button class="share-btn download" id="downloadPhoto">
+          📥 Descargar foto
+        </button>
+        <img id="capturedImage" alt="Foto capturada" />
+        <button id="closeShare">Cerrar</button>
+      </div>
+    </div>
+
+    <!-- Alert Box -->
+    <div class="alert-box" id="alertBox">
+      <button class="close-btn" onclick="closeAlert()">×</button>
+      <h3 id="alertTitle"></h3>
+      <div id="alertMessage"></div>
+    </div>
+
+    <!-- Logos -->
+    <img
+      id="logoTop"
+      src="Assets/imgs/logos/img_up.png"
+      alt="Logo Superior"
+      crossorigin="anonymous"
+    />
+    <img
+      id="logoBottom"
+      src="Assets/imgs/logos/humanismo.png"
+      alt="Logo Inferior"
+      crossorigin="anonymous"
+    />
+
+    <!-- Botón cámara -->
+    <button id="btnCamera">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M12 15.2c-2.6 0-4.7-2.1-4.7-4.7S9.4 5.8 12 5.8s4.7 2.1 4.7 4.7-2.1 4.7-4.7 4.7zm0-7.4c-1.5 0-2.7 1.2-2.7 2.7 0 1.5 1.2 2.7 2.7 2.7s2.7-1.2 2.7-2.7c0-1.5-1.2-2.7-2.7-2.7z"
+        />
+        <path
+          d="M20 19H4c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h3.2L9 3h6l1.8 3H20c1.1 0 2 .9 2 2v9c0 1.1-.9 2-2 2zM4 8v9h16V8h-4.5l-1.8-3h-3.4L8.5 8H4z"
+        />
+      </svg>
+      <span>Tomar foto</span>
+    </button>
+
+    <div id="container">
+      <video id="video" playsinline></video>
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <!-- MediaPipe Face Mesh -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <script type="module">
+      const splash = document.getElementById("splash");
+      const modal = document.getElementById("modal");
+      const btnConsent = document.getElementById("btnConsent");
+      const btnCamera = document.getElementById("btnCamera");
+      const shareModal = document.getElementById("shareModal");
+      const capturedImage = document.getElementById("capturedImage");
+      const closeShare = document.getElementById("closeShare");
+      const copyHashtagsBtn = document.getElementById("copyHashtagsBtn");
+      const captureOverlay = document.getElementById("captureOverlay");
+      const video = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // Precargar logos con CORS
+      const logoTopImg = new Image();
+      logoTopImg.crossOrigin = "anonymous";
+      logoTopImg.src = "Assets/imgs/logos/img_up.png";
+
+      const logoBottomImg = new Image();
+      logoBottomImg.crossOrigin = "anonymous";
+      logoBottomImg.src = "Assets/imgs/logos/humanismo.png";
+
+      const logoTopEl = document.getElementById("logoTop");
+      const logoBottomEl = document.getElementById("logoBottom");
+
+      // Precargar máscaras de jaguar
+      const maskImages = [
+        { img: new Image(), src: "Assets/imgs/facemasks/2.png" },
+        { img: new Image(), src: "Assets/imgs/facemasks/1.png" },
+      ];
+
+      maskImages.forEach((mask) => {
+        mask.img.crossOrigin = "anonymous";
+        mask.img.src = mask.src;
+      });
+
+      // Audio
+      const audioEl = new Audio("Assets/sounds/audio.mp3");
+      audioEl.loop = false;
+      audioEl.preload = "auto";
+
+      const shutterAudio = new Audio("Assets/sounds/shutter.mp3");
+      shutterAudio.preload = "auto";
+
+      let audioAllowed = false;
+      let facesDetected = false;
+      let wasFacesDetected = false;
+      let capturedBlob = null;
+
+      function playFromStart() {
+        audioEl.currentTime = 0;
+        audioEl.play().catch(() => {});
+      }
+
+      function stopAudio() {
+        audioEl.pause();
+        audioEl.currentTime = 0;
+      }
+
+      audioEl.addEventListener("ended", () => {
+        if (facesDetected && audioAllowed) playFromStart();
+      });
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          stopAudio();
+        } else {
+          if (audioAllowed && facesDetected) {
+            playFromStart();
+          }
+        }
+      });
+
+      window.addEventListener("blur", stopAudio);
+      window.addEventListener("focus", () => {
+        if (audioAllowed && facesDetected) {
+          playFromStart();
+        }
+      });
+
+      // Configurar tamaño del canvas
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resizeCanvas();
+      window.addEventListener("resize", resizeCanvas);
+
+      // MediaPipe Face Mesh
+      const faceMesh = new FaceMesh({
+        locateFile: (file) => {
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+        },
+      });
+
+      faceMesh.setOptions({
+        maxNumFaces: 2,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+
+      // Función para dibujar máscara sobre rostro
+      function drawMask(landmarks, maskImg, canvasWidth, canvasHeight) {
+        // Puntos clave del rostro
+        const forehead = landmarks[10];
+        const chin = landmarks[152];
+        const leftCheek = landmarks[234];
+        const rightCheek = landmarks[454];
+
+        // Calcular dimensiones de la máscara
+        const faceWidth =
+          Math.abs(rightCheek.x - leftCheek.x) * canvasWidth * 1.5;
+        const faceHeight = Math.abs(chin.y - forehead.y) * canvasHeight * 1.5;
+
+        // Posición central
+        const centerX = ((leftCheek.x + rightCheek.x) / 2) * canvasWidth;
+        const centerY = ((forehead.y + chin.y) / 2) * canvasHeight;
+
+        // Dibujar máscara centrada
+        if (maskImg.complete && maskImg.naturalWidth > 0) {
+          ctx.save();
+          ctx.translate(centerX, centerY);
+          ctx.drawImage(
+            maskImg,
+            -faceWidth / 2,
+            -faceHeight / 2,
+            faceWidth,
+            faceHeight
+          );
+          ctx.restore();
+        }
+      }
+
+      // Procesar resultados de MediaPipe
+      function onResults(results) {
+        // Limpiar canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (
+          results.multiFaceLandmarks &&
+          results.multiFaceLandmarks.length > 0
+        ) {
+          facesDetected = true;
+
+          // Dibujar máscara para cada rostro detectado
+          results.multiFaceLandmarks.forEach((landmarks, index) => {
+            const maskIndex = index % maskImages.length;
+            drawMask(
+              landmarks,
+              maskImages[maskIndex].img,
+              canvas.width,
+              canvas.height
+            );
+          });
+
+          // Reproducir audio si no estaba detectando rostros
+          if (!wasFacesDetected && audioAllowed) {
+            playFromStart();
+          }
+        } else {
+          facesDetected = false;
+          if (wasFacesDetected) {
+            stopAudio();
+          }
+        }
+
+        wasFacesDetected = facesDetected;
+      }
+
+      faceMesh.onResults(onResults);
+
+      // Iniciar cámara
+      async function startCamera() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "user",
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          });
+
+          video.srcObject = stream;
+
+          await new Promise((resolve) => {
+            video.onloadedmetadata = () => {
+              video.play();
+              resolve();
+            };
+          });
+
+          // Ocultar splash y mostrar modal de audio
+          setTimeout(() => {
+            splash.style.display = "none";
+            modal.style.display = "flex";
+          }, 1500);
+
+          // Iniciar procesamiento de video
+          const camera = new Camera(video, {
+            onFrame: async () => {
+              await faceMesh.send({ image: video });
+            },
+            width: 1280,
+            height: 720,
+          });
+          camera.start();
+        } catch (error) {
+          console.error("Error accessing camera:", error);
+          alert(
+            "No se pudo acceder a la cámara. Por favor, permite el acceso a la cámara."
+          );
+        }
+      }
+
+      // Consentimiento de audio
+      btnConsent.addEventListener("click", async () => {
+        try {
+          audioEl.currentTime = 0;
+          await audioEl.play();
+          audioEl.pause();
+          audioEl.currentTime = 0;
+        } catch (_) {}
+        audioAllowed = true;
+        modal.style.display = "none";
+        if (facesDetected) playFromStart();
+      });
+
+      // Capturar foto
+      async function capturePhoto() {
+        shutterAudio.currentTime = 0;
+        shutterAudio.play().catch(() => {});
+
+        btnCamera.style.visibility = "hidden";
+
+        try {
+          // Crear canvas temporal para captura
+          const captureCanvas = document.createElement("canvas");
+          captureCanvas.width = window.innerWidth;
+          captureCanvas.height = window.innerHeight;
+          const captureCtx = captureCanvas.getContext("2d");
+
+          // 1. Dibujar video
+          const videoAspect = video.videoWidth / video.videoHeight;
+          const canvasAspect = captureCanvas.width / captureCanvas.height;
+
+          let sx = 0,
+            sy = 0,
+            sWidth = video.videoWidth,
+            sHeight = video.videoHeight;
+
+          if (videoAspect > canvasAspect) {
+            sWidth = video.videoHeight * canvasAspect;
+            sx = (video.videoWidth - sWidth) / 2;
+          } else {
+            sHeight = video.videoWidth / canvasAspect;
+            sy = (video.videoHeight - sHeight) / 2;
+          }
+
+          captureCtx.drawImage(
+            video,
+            sx,
+            sy,
+            sWidth,
+            sHeight,
+            0,
+            0,
+            captureCanvas.width,
+            captureCanvas.height
+          );
+
+          // 2. Dibujar máscaras desde el canvas principal
+          captureCtx.drawImage(canvas, 0, 0);
+
+          // Mostrar overlay de procesamiento
+          captureOverlay.classList.add("active");
+
+          await new Promise((resolve) => setTimeout(resolve, 50));
+
+          // 3. Dibujar logos
+          if (logoTopImg.complete && logoTopImg.naturalWidth > 0) {
+            const topRect = logoTopEl.getBoundingClientRect();
+            captureCtx.drawImage(
+              logoTopImg,
+              topRect.left,
+              topRect.top,
+              topRect.width,
+              topRect.height
+            );
+          }
+
+          if (logoBottomImg.complete && logoBottomImg.naturalWidth > 0) {
+            const bottomRect = logoBottomEl.getBoundingClientRect();
+            captureCtx.drawImage(
+              logoBottomImg,
+              bottomRect.left,
+              bottomRect.top,
+              bottomRect.width,
+              bottomRect.height
+            );
+          }
+
+          // Convertir a blob
+          captureCanvas.toBlob(
+            (blob) => {
+              if (blob) {
+                capturedBlob = blob;
+                const url = URL.createObjectURL(blob);
+                capturedImage.src = url;
+
+                captureOverlay.classList.remove("active");
+                shareModal.style.display = "flex";
+              } else {
+                alert("Error al crear la imagen.");
+                captureOverlay.classList.remove("active");
+              }
+              btnCamera.style.visibility = "visible";
+            },
+            "image/png",
+            0.95
+          );
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Error: " + error.message);
+          captureOverlay.classList.remove("active");
+          btnCamera.style.visibility = "visible";
+        }
+      }
+
+      btnCamera.addEventListener("click", capturePhoto);
+
+      // Cerrar modal compartir
+      closeShare.addEventListener("click", () => {
+        shareModal.style.display = "none";
+        if (capturedBlob) {
+          URL.revokeObjectURL(capturedImage.src);
+          capturedBlob = null;
+        }
+      });
+
+      // Descargar foto
+      document.getElementById("downloadPhoto").addEventListener("click", () => {
+        if (capturedBlob) {
+          const url = URL.createObjectURL(capturedBlob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "jaguar-ar-" + Date.now() + ".png";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
+      });
+
+      // Copiar hashtags al portapapeles
+      copyHashtagsBtn.addEventListener("click", async () => {
+        const HASHTAGS_TEXT =
+          "#EduardoRamirez #1erInformeRA #HumanismoQueTransforma";
+
+        try {
+          await navigator.clipboard.writeText(HASHTAGS_TEXT);
+          const btnText = copyHashtagsBtn.querySelector(".btn-text");
+          const originalText = btnText.textContent;
+
+          copyHashtagsBtn.classList.add("copied");
+          btnText.textContent = "¡Copiado! ✓";
+
+          setTimeout(() => {
+            copyHashtagsBtn.classList.remove("copied");
+            btnText.textContent = originalText;
+          }, 2000);
+        } catch (error) {
+          alert(
+            "No se pudo copiar. Por favor, copia manualmente: " + HASHTAGS_TEXT
+          );
+        }
+      });
+
+      // Compartir en WhatsApp
+      document.getElementById("shareWhatsapp").addEventListener("click", () => {
+        shareToSocial("whatsapp", capturedBlob);
+      });
+
+      document.getElementById("shareFacebook").addEventListener("click", () => {
+        shareToSocial("facebook", capturedBlob);
+      });
+
+      document
+        .getElementById("shareInstagram")
+        .addEventListener("click", () => {
+          shareToSocial("instagram", capturedBlob);
+        });
+
+      document.getElementById("shareX").addEventListener("click", () => {
+        shareToSocial("x", capturedBlob);
+      });
+
+      const SHARE_CONFIG = {
+        text: "¡Mira mi foto con el filtro de Jaguar AR! Primer Informe de Gobierno Chiapas #EduardoRamirez #1erInformeChiapas #JaguarAR #Chiapas",
+        title: "Filtro Jaguar AR",
+        filename: "jaguar-ar-chiapas.jpg",
+      };
+
+      async function shareToSocial(platform, imageBlob) {
+        if (navigator.share && navigator.canShare) {
+          try {
+            const file = new File([imageBlob], SHARE_CONFIG.filename, {
+              type: "image/jpeg",
+            });
+
+            const shareData = {
+              files: [file],
+              title: SHARE_CONFIG.title,
+              text: SHARE_CONFIG.text,
+            };
+
+            if (navigator.canShare(shareData)) {
+              await navigator.share(shareData);
+              console.log(`✅ Compartido exitosamente en ${platform}`);
+              return true;
+            }
+          } catch (error) {
+            if (error.name === "AbortError") {
+              console.log("Usuario canceló el compartir");
+              return false;
+            }
+            console.log("Error con Web Share API:", error);
+          }
+        }
+
+        downloadImageWithMessage(platform, imageBlob);
+        return false;
+      }
+
+      function downloadImageWithMessage(platform, imageBlob) {
+        const url = URL.createObjectURL(imageBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = SHARE_CONFIG.filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        let clipboardSuccess = false;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard
+            .writeText(SHARE_CONFIG.text)
+            .then(() => {
+              clipboardSuccess = true;
+              showCustomAlert(platform, true);
+            })
+            .catch(() => {
+              showCustomAlert(platform, false);
+            });
+        } else {
+          showCustomAlert(platform, false);
+        }
+      }
+
+      function showCustomAlert(platform, textCopied) {
+        const platformNames = {
+          whatsapp: "WhatsApp",
+          facebook: "Facebook",
+          instagram: "Instagram",
+          x: "X (Twitter)",
+        };
+
+        const alertBox = document.getElementById("alertBox");
+        const alertTitle = document.getElementById("alertTitle");
+        const alertMessage = document.getElementById("alertMessage");
+
+        alertTitle.textContent = "📥 Imagen descargada";
+
+        let message = `
+        <p><strong>⚠️ Tu navegador no soporta compartir directamente</strong></p>
+        <p>La imagen ha sido descargada automáticamente.</p>
+        <p><strong>📋 Pasos para compartir en ${
+          platformNames[platform]
+        }:</strong></p>
+        <p>1️⃣ Abre la aplicación de ${platformNames[platform]}<br>
+        2️⃣ Crea una nueva publicación<br>
+        3️⃣ Adjunta la imagen descargada<br>
+        4️⃣ ${
+          textCopied
+            ? "Pega el texto (ya está copiado en tu portapapeles)"
+            : "Copia y pega este texto:"
+        }</p>
+      `;
+
+        if (!textCopied) {
+          message += `
+          <p style="background: #f0f0f0; padding: 10px; border-radius: 6px; margin-top: 10px; color: #333; font-size: 12px;">
+            ${SHARE_CONFIG.text}
+          </p>
+        `;
+        }
+
+        message += `<p style="margin-top: 15px; font-size: 12px; color: #666;">💡 Actualiza tu navegador para mejorar la experiencia de compartir.</p>`;
+
+        alertMessage.innerHTML = message;
+        alertBox.classList.add("show");
+
+        setTimeout(() => {
+          closeAlert();
+        }, 12000);
+      }
+
+      function closeAlert() {
+        const alertBox = document.getElementById("alertBox");
+        alertBox.classList.remove("show");
+      }
+
+      async function getDemoImageBlob() {
+        const img = document.getElementById("demoImage");
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+
+        return new Promise((resolve) => {
+          canvas.toBlob(
+            (blob) => {
+              resolve(blob);
+            },
+            "image/jpeg",
+            0.92
+          );
+        });
+      }
+
+      document.querySelectorAll(".share-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const platform = btn.dataset.platform;
+          console.log(`Compartiendo en ${platform}...`);
+
+          const imageBlob = await getDemoImageBlob();
+
+          await shareToSocial(platform, imageBlob);
+        });
+      });
+
+      document.getElementById("alertBox").addEventListener("click", (e) => {
+        if (e.target.id === "alertBox") {
+          closeAlert();
+        }
+      });
+      // Iniciar aplicación
+      startCamera();
+    </script>
+  </body>
+</html>
