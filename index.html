@@ -1078,13 +1078,10 @@
       let stableStart         = null;
       let qrCheckInterval     = null;
 
-      // ── ALERTA DE VOLUMEN BAJO (Web Audio API) ──
-      const alertVolume  = document.getElementById("alertVolume");
+      // ── ALERTA DE VOLUMEN BAJO ──
+      const alertVolume     = document.getElementById("alertVolume");
       let   volAlertVisible = false;
-      let   audioCtx        = null;
-      let   analyser        = null;
-      let   volRafId        = null;
-      let   currentSource   = null;
+      let   volInterval     = null;
 
       function showVolumeAlert() {
         if (volAlertVisible) return;
@@ -1102,58 +1099,21 @@
 
       function startVolumeCheck(videoEl) {
         stopVolumeCheck();
-        try {
-          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          if (audioCtx.state === "suspended") audioCtx.resume();
-
-          // Reusar o crear analyser
-          if (!analyser) {
-            analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 256;
-            analyser.connect(audioCtx.destination);
-          }
-
-          // Conectar el video como fuente
-          currentSource = audioCtx.createMediaElementSource(videoEl);
-          currentSource.connect(analyser);
-
-          const dataArray = new Uint8Array(analyser.frequencyBinCount);
-          const LOW_THRESHOLD  = 8;   // nivel muy bajo → mostrar alerta
-          const HIGH_THRESHOLD = 20;  // nivel audible → ocultar alerta
-
-          function loop() {
-            volRafId = requestAnimationFrame(loop);
-            analyser.getByteFrequencyData(dataArray);
-            const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-            if (avg < LOW_THRESHOLD) {
-              showVolumeAlert();
-            } else if (avg > HIGH_THRESHOLD) {
-              hideVolumeAlert();
-            }
-          }
-          loop();
-        } catch(e) {
-          // Si falla Web Audio API, fallback a detección de muted
-          startVolumeFallback(videoEl);
-        }
-      }
-
-      function startVolumeFallback(videoEl) {
-        stopVolumeCheck();
-        volRafId = setInterval(() => {
+        volInterval = setInterval(() => {
           if (!videoEl || videoEl.paused) { hideVolumeAlert(); return; }
           videoEl.muted ? showVolumeAlert() : hideVolumeAlert();
         }, 600);
+        // revisión inmediata
+        setTimeout(() => {
+          if (videoEl && !videoEl.paused) {
+            videoEl.muted ? showVolumeAlert() : hideVolumeAlert();
+          }
+        }, 400);
       }
 
       function stopVolumeCheck() {
-        if (volRafId) {
-          cancelAnimationFrame(volRafId);
-          clearInterval(volRafId);
-          volRafId = null;
-        }
-        // Desconectar fuente anterior para no duplicar conexiones
-        try { if (currentSource) { currentSource.disconnect(); currentSource = null; } } catch(e) {}
+        clearInterval(volInterval);
+        volInterval = null;
         hideVolumeAlert();
       }
 
